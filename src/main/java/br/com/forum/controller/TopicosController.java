@@ -9,18 +9,16 @@ import br.com.forum.repository.CursoRepository;
 import br.com.forum.repository.TopicoRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/topicos")
@@ -34,7 +32,7 @@ public class TopicosController {
    @GetMapping
    @Cacheable(value = "listaDeTopicos")
    public Page<TopicoDto> lista(@RequestParam(required = false) String nomeCurso,
-                                @PageableDefault(sort = "id", direction = Sort.Direction.DESC, size = 5) Pageable paginacao) {
+                                @PageableDefault(sort = "id", direction = Sort.Direction.ASC, size = 5) Pageable paginacao) {
 
       if (nomeCurso==null) {
          Page<Topico> topicos = topicoRepository.findAll(paginacao);
@@ -46,6 +44,7 @@ public class TopicosController {
    }
 
    @PostMapping
+   @CacheEvict(value = "listaDeTopicos", allEntries = true)
    public ResponseEntity<TopicoDto> cadastrar(@RequestBody @Valid TopicoForm form, UriComponentsBuilder uriBuilder) {
       Topico topico = form.converter(cursoRepository);
       topicoRepository.save(topico);
@@ -63,6 +62,7 @@ public class TopicosController {
    }
 
    @PutMapping("/{id}")
+   @CacheEvict(value = "listaDeTopicos", allEntries = true)
    public ResponseEntity<TopicoDto> atualizar(@PathVariable Long id, @RequestBody @Valid AtualizarTopicoForm form) {
       if (topicoRepository.existsById(id)) {
          Topico topico = form.atualizar(id, topicoRepository);
@@ -73,6 +73,7 @@ public class TopicosController {
    }
 
    @DeleteMapping("/{id}")
+   @CacheEvict(value = "listaDeTopicos", allEntries = true)
    public ResponseEntity<?> remover(@PathVariable Long id) {
       if (topicoRepository.existsById(id)) {
          topicoRepository.deleteById(id);
